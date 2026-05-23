@@ -1,4 +1,5 @@
 import uuid
+from src.utils.fin_cleaner import clean_html
 from src.configs.company_registry import COMPANIES
 from src.connectors.sec_edgar import fetch_company_filings, download_filing
 from src.utils.chunking import chunk_text
@@ -6,6 +7,14 @@ from src.reports.ingestion_report import generate_report
 from src.rag.embeddings import Embedder
 from src.rag.vectorstore.chroma_store import VectorStore
 
+def preprocess_filings(text: str) -> str:
+    cleaned = clean_html(text)
+
+    # filter extreme noise
+    if len(cleaned) < 200:
+        return None
+
+    return cleaned
 
 def run(company_key="SABLE_OFFSHORE"):
     company = COMPANIES[company_key]
@@ -25,6 +34,12 @@ def run(company_key="SABLE_OFFSHORE"):
 
     for f in filings:
         text = download_filing(cik, f["accession"], f["primary_doc"])
+
+        if not text:
+            continue
+
+        # NEW: cleaning step
+        text = preprocess_filings(text)
 
         if not text:
             continue
