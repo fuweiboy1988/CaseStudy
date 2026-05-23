@@ -1,0 +1,1 @@
+No SEC data available for Aker Solutions ASA
