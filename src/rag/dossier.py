@@ -1,5 +1,3 @@
-# src/rag/dossier.py
-
 from dataclasses import dataclass
 from typing import List, Dict, Any
 
@@ -58,3 +56,44 @@ class ResearchDossierBuilder:
             "ranked_themes": ranked_themes,
             "theme_summary": [t[0] for t in ranked_themes]
         }
+
+
+# ---- compatibility wrapper for main.py ----
+
+def build_dossier(structured_context):
+    builder = ResearchDossierBuilder()
+    dossier = builder.build(structured_context)
+
+    themes = dossier.get("theme_summary", [])
+    evidence_count = len(dossier.get("evidence", []))
+
+    report = f"""# Deep Research Dossier
+
+## Evidence Coverage
+- Evidence chunks reviewed: {evidence_count}
+
+## Dominant Themes
+"""
+
+    if themes:
+        for t in themes[:5]:
+            report += f"- {t}\n"
+    else:
+        report += "- No dominant themes identified\n"
+
+    report += """
+
+## Key Observations
+- Research generated from retrieved filing evidence
+- Further adversarial reasoning modules can expand this dossier
+
+## Remaining Gaps
+- Management tone analysis not yet implemented
+- Contradiction detection not yet implemented
+- Verdict logic still preliminary
+"""
+
+    return {
+        **dossier,
+        "report": report
+    }

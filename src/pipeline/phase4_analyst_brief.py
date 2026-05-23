@@ -10,15 +10,35 @@ class AnalystBriefBuilder:
     def build(self, phase1: Dict[str, Any], phase2: Dict[str, Any]) -> Dict[str, Any]:
         merged = self._merge(phase1, phase2)
 
+        verdict = self._verdict(merged)
+        confidence = self._confidence(merged)
+        key_risks = self._key_risks(merged)
+        key_supports = self._key_supports(merged)
+        must_hold = self._must_hold(merged)
+        watch_items = self._watch_items(merged)
+        missing_info = self._missing_info(merged)
+        evidence = self._map_evidence(merged)
+
+        report = self._render_report(
+            verdict,
+            confidence,
+            key_risks,
+            key_supports,
+            must_hold,
+            watch_items,
+            missing_info
+        )
+
         return {
-            "verdict": self._verdict(merged),
-            "confidence": self._confidence(merged),
-            "key_risks": self._key_risks(merged),
-            "key_supports": self._key_supports(merged),
-            "what_must_be_true": self._must_hold(merged),
-            "top_watch_items": self._watch_items(merged),
-            "missing_information": self._missing_info(merged),
-            "supporting_evidence": self._map_evidence(merged),
+            "verdict": verdict,
+            "confidence": confidence,
+            "key_risks": key_risks,
+            "key_supports": key_supports,
+            "what_must_be_true": must_hold,
+            "top_watch_items": watch_items,
+            "missing_information": missing_info,
+            "supporting_evidence": evidence,
+            "report": report,
         }
 
     def _merge(self, phase1, phase2):
@@ -37,8 +57,10 @@ class AnalystBriefBuilder:
 
         if risk > 0.7 or "governance" in themes:
             return "High risk / structurally fragile thesis"
+
         if "liquidity" in themes or risk > 0.4:
             return "Moderate risk / execution-dependent"
+
         return "Low risk / stable fundamentals"
 
     def _confidence(self, m):
@@ -51,8 +73,10 @@ class AnalystBriefBuilder:
 
     def _key_supports(self, m) -> List[str]:
         bull = [c["claim"] for c in m.get("bull_case", [])]
+
         if not bull:
             bull = m["thesis"].get("must_hold_conditions", [])
+
         return self._dedupe_top_k(bull, k=3)
 
     def _must_hold(self, m):
@@ -63,16 +87,24 @@ class AnalystBriefBuilder:
         themes = m["themes"].get("theme_summary", [])
 
         if "liquidity" in themes:
-            watch.append("Monitor refinancing and liquidity runway under stress")
+            watch.append(
+                "Monitor refinancing and liquidity runway under stress"
+            )
 
         if "governance" in themes:
-            watch.append("Watch internal controls and reporting integrity disclosures")
+            watch.append(
+                "Watch internal controls and reporting integrity disclosures"
+            )
 
         if "regulatory" in themes:
-            watch.append("Track regulatory updates and compliance risk signals")
+            watch.append(
+                "Track regulatory updates and compliance risk signals"
+            )
 
         if "financial_reporting" in themes:
-            watch.append("Monitor audit opinion changes or restatement risk")
+            watch.append(
+                "Monitor audit opinion changes or restatement risk"
+            )
 
         return watch
 
@@ -80,13 +112,19 @@ class AnalystBriefBuilder:
         missing = []
 
         if not m.get("context"):
-            missing.append("Insufficient primary disclosure context")
+            missing.append(
+                "Insufficient primary disclosure context"
+            )
 
         if "liquidity" not in m["themes"].get("theme_summary", []):
-            missing.append("Debt maturity / liquidity structure unclear")
+            missing.append(
+                "Debt maturity / liquidity structure unclear"
+            )
 
         if "governance" not in m["themes"].get("theme_summary", []):
-            missing.append("Limited governance/control structure detail")
+            missing.append(
+                "Limited governance/control structure detail"
+            )
 
         return missing
 
@@ -104,6 +142,66 @@ class AnalystBriefBuilder:
 
         return mapped
 
+    def _render_report(
+        self,
+        verdict,
+        confidence,
+        key_risks,
+        key_supports,
+        must_hold,
+        watch_items,
+        missing_info
+    ):
+        report = f"""# Analyst Brief
+
+## Verdict
+{verdict}
+
+Confidence: {confidence:.2f}
+
+## Key Risks
+"""
+
+        if key_risks:
+            for r in key_risks[:5]:
+                report += f"- {r}\n"
+        else:
+            report += "- No major risks identified\n"
+
+        report += "\n## Key Supports\n"
+
+        if key_supports:
+            for s in key_supports[:3]:
+                report += f"- {s}\n"
+        else:
+            report += "- No strong support factors identified\n"
+
+        report += "\n## What Must Be True\n"
+
+        if must_hold:
+            for m in must_hold[:3]:
+                report += f"- {m}\n"
+        else:
+            report += "- No must-hold assumptions defined\n"
+
+        report += "\n## Top Watch Items\n"
+
+        if watch_items:
+            for w in watch_items[:3]:
+                report += f"- {w}\n"
+        else:
+            report += "- No active watch items\n"
+
+        report += "\n## Missing Information\n"
+
+        if missing_info:
+            for g in missing_info[:3]:
+                report += f"- {g}\n"
+        else:
+            report += "- No major information gaps detected\n"
+
+        return report
+
     def _dedupe_top_k(self, items, k=3):
         seen = set()
         out = []
@@ -112,6 +210,7 @@ class AnalystBriefBuilder:
             if x not in seen:
                 seen.add(x)
                 out.append(x)
+
             if len(out) == k:
                 break
 

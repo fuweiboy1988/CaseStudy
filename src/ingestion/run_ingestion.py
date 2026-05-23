@@ -6,6 +6,9 @@ from src.utils.chunking import chunk_text
 from src.reports.ingestion_report import generate_report
 from src.rag.embeddings import Embedder
 from src.rag.vectorstore.chroma_store import VectorStore
+import os
+
+os.makedirs("outputs", exist_ok=True)
 
 def preprocess_filings(text: str) -> str:
     cleaned = clean_html(text)
@@ -80,12 +83,20 @@ def run(company_key="SABLE_OFFSHORE"):
         company["name"]
     )
 
-    with open("outputs_ingestion_report.md", "w") as f:
+    with open("outputs/ingestion_report.md", "w") as f:
         f.write(report)
 
     print(report)
     print(f"\nChunks embedded: {len(docs)}")
+    return {
+        "documents": docs,
+        "metadata": metas,
+        "filings": filings,
+        "report": report
+    }
 
+def run_ingestion(company: str):
+    return run(company)
 
 if __name__ == "__main__":
     run()
