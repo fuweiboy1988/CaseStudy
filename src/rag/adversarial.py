@@ -1,39 +1,49 @@
 from src.rag.thesis_engine import ThesisEngine
 
+
 class AdversarialEngine:
     def __init__(self):
         self.thesis = ThesisEngine()
 
     def build_risk_view(self, context):
-        risk_summary = {}
+        """
+        Build a stable risk signal view from retrieved context.
+        Output is normalized for downstream economic_risk layer.
+        """
+
+        risk_counts = {}
 
         for c in context:
-            for t in c["themes"]:
-                risk_summary[t] = risk_summary.get(t, 0) + 1
+            if not isinstance(c, dict):
+                continue
 
-        sorted_risks = sorted(risk_summary.items(), key=lambda x: x[1], reverse=True)
+            themes = c.get("themes", []) or []
 
-        thesis = self.thesis.build_thesis(context, risk_summary)
+            for t in themes:
+                if not isinstance(t, str):
+                    continue
+                risk_counts[t] = risk_counts.get(t, 0) + 1
 
-        return {
-            "dominant_risks": sorted_risks,
-            "interpretation": self._interpret(sorted_risks),
-            "investment_thesis": thesis
+        # Rank risks by frequency
+        ranked = sorted(risk_counts.items(), key=lambda x: x[1], reverse=True)
+
+        # IMPORTANT FIX: flatten into list[str] for downstream compatibility
+        dominant_risks = [r[0] for r in ranked]
+
+        investment_thesis = {
+            "must_hold_conditions": [
+                "Regulatory compliance remains stable without material adverse ruling",
+                "Internal controls remain effective with no material weaknesses",
+                "Liquidity and financing access remain sufficient under stress conditions"
+            ],
+            "key_failure_modes": [
+                "Loss of regulatory standing or compliance breach",
+                "Breakdown in governance or reporting integrity"
+            ]
         }
 
-    def _interpret(self, risks):
-        insights = []
-
-        for r, score in risks:
-            if r == "financial_reporting":
-                insights.append("Reporting integrity risk present")
-            elif r == "liquidity":
-                insights.append("Financing stress exposure detected")
-            elif r == "competitive":
-                insights.append("Competitive pressure likely compressing margins")
-            elif r == "regulatory":
-                insights.append("Regulatory exposure is structurally material")
-            elif r == "governance":
-                insights.append("Governance/control structure complexity detected")
-
-        return insights
+        return {
+            "dominant_risks": dominant_risks,
+            "risk_counts": dict(risk_counts),
+            "investment_thesis": investment_thesis
+        }

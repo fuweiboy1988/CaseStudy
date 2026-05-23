@@ -1,20 +1,33 @@
-def interpret_materiality(scored_risks):
-    interpretation = []
+def interpret_materiality(economic_risk):
+    """
+    Convert economic risk output into top material risks.
+    """
 
-    top = scored_risks[:3]
+    if not isinstance(economic_risk, dict):
+        return {"top_risks": []}
 
-    for r in top:
-        if r["risk"] == "liquidity":
-            interpretation.append("Short-term solvency / refinancing risk is dominant driver of equity risk.")
-        elif r["risk"] == "regulatory":
-            interpretation.append("Regulatory regime risk can permanently re-rate valuation.")
-        elif r["risk"] == "governance":
-            interpretation.append("Control structure introduces asymmetric downside risk.")
-        elif r["risk"] == "financial_reporting":
-            interpretation.append("Accounting reliability risk can trigger valuation multiple compression.")
-        elif r["risk"] == "operational":
-            interpretation.append("Execution risk affects cash flow stability.")
-        elif r["risk"] == "competitive":
-            interpretation.append("Market pressure impacts long-term margin profile.")
+    # Primary signal: ranked scores
+    scored = economic_risk.get("scores")
 
-    return interpretation
+    # Fallback: dominant_risks (already top-k list)
+    if not scored:
+        scored = economic_risk.get("dominant_risks", [])
+
+    # Normalize format:
+    # scores = [(risk, score), ...]
+    # dominant_risks = [risk, ...]
+    normalized = []
+
+    if isinstance(scored, list):
+        for item in scored:
+            if isinstance(item, tuple) or isinstance(item, list):
+                normalized.append(item[0])
+            else:
+                normalized.append(item)
+
+    # final top 3
+    top = normalized[:3]
+
+    return {
+        "top_risks": top
+    }
