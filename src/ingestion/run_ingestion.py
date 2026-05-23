@@ -21,6 +21,14 @@ def preprocess_filings(text: str) -> str:
 
 def run(company_key="SABLE_OFFSHORE"):
     company = COMPANIES[company_key]
+    if "sec_cik" not in company:
+        print(f"[SKIP] {company['name']} - no SEC ingestion source")
+        return {
+            "context": [],
+            "report": f"No SEC data available for {company['name']}",
+            "filings": []
+        }
+
     cik = company["sec_cik"]
 
     print(f"Fetching filings for {company['name']}...")
@@ -30,26 +38,21 @@ def run(company_key="SABLE_OFFSHORE"):
     embedder = Embedder()
     store = VectorStore()
 
+    ids, docs, metas = [], [], []
     all_chunks = []
-    ids = []
-    docs = []
-    metas = []
 
     for f in filings:
         text = download_filing(cik, f["accession"], f["primary_doc"])
-
         if not text:
             continue
 
-        # NEW: cleaning step
         text = preprocess_filings(text)
-
         if not text:
             continue
 
         chunks = chunk_text(text)
 
-        for i, chunk in enumerate(chunks):
+        for chunk in chunks:
             ids.append(str(uuid.uuid4()))
             docs.append(chunk)
             metas.append({
@@ -62,38 +65,27 @@ def run(company_key="SABLE_OFFSHORE"):
 
     print(f"Embedding {len(docs)} chunks...")
 
-    batch_size = 64
     embeddings = []
+    batch_size = 64
 
     for i in range(0, len(docs), batch_size):
         batch = docs[i:i+batch_size]
         embeddings.extend(embedder.embed(batch))
 
-    print("Storing in vector DB...")
+    store.add(ids=ids, embeddings=embeddings, documents=docs, metadata=metas)
 
-    store.add(
-        ids=ids,
-        embeddings=embeddings,
-        documents=docs,
-        metadata=metas
-    )
+    report = generate_report(filings, company["name"])
 
-    report = generate_report(
-        filings,
-        company["name"]
-    )
-
-    with open("outputs/ingestion_report.md", "w") as f:
+    with open("outputs_ingestion_report.md", "w") as f:
         f.write(report)
 
-    print(report)
-    print(f"\nChunks embedded: {len(docs)}")
+    # IMPORTANT: guaranteed return
     return {
-        "documents": docs,
-        "metadata": metas,
-        "filings": filings,
-        "report": report
+        "context": all_chunks,
+        "report": report,
+        "filings": filings
     }
+
 
 def run_ingestion(company: str):
     return run(company)

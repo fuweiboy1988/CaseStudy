@@ -1,13 +1,16 @@
 COMPANIES = {
     "SABLE_OFFSHORE": {
-        "ticker": "SOC",
         "name": "Sable Offshore Corp",
-        "sec_cik": "0001941131"
+        "ticker": "SOC",
+        "sec_cik": "0001951089",
+        "exchange": "NYSE",
+        "source": "SEC"
     },
+
     "AKER_SOLUTIONS": {
-        "ticker": "AKSO",
         "name": "Aker Solutions ASA",
-        "country": "NO",
-        "exchange": "Oslo Bors"
+        "ticker": "AKSO",
+        "exchange": "Oslo",
+        "source": "IR"
     }
 }

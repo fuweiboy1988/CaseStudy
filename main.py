@@ -1,69 +1,88 @@
-import os
-from src.pipeline.phase4_analyst_brief import AnalystBriefBuilder
+from pathlib import Path
 
-# You likely already have these modules (adjust imports if needed)
 from src.ingestion.run_ingestion import run_ingestion
 from src.rag.dossier import build_dossier
+from src.pipeline.phase4_analyst_brief import AnalystBriefBuilder
 
 
-OUTPUT_DIR = "outputs"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+OUTPUT_DIR = Path("outputs")
 
 
 def save_file(path, content):
-    with open(path, "w", encoding="utf-8") as f:
+    with open(path, "w") as f:
         f.write(content)
 
 
-def run_pipeline(company="SABLE_OFFSHORE"):
-    print("\n🚀 Starting full investment research pipeline...\n")
+def run_pipeline(company_key):
 
-    # =========================
-    # Phase 1: Ingestion
-    # =========================
-    print("📦 Phase 1: Running ingestion...")
-    phase1_output = run_ingestion(company)
+    print(f"\n=== {company_key} ===")
 
-    ingestion_path = os.path.join(OUTPUT_DIR, "ingestion_report.md")
-    save_file(ingestion_path, phase1_output["report"])
+    phase1_output = run_ingestion(company_key)
 
-    print(f"✅ Phase 1 complete → {ingestion_path}")
+    phase1_path = (
+        OUTPUT_DIR /
+        f"{company_key.lower()}_ingestion_report.md"
+    )
 
-    # =========================
-    # Phase 2: Dossier
-    # =========================
-    print("\n🧠 Phase 2: Building deep research dossier...")
-    phase2_output = build_dossier(phase1_output)
+    save_file(
+        phase1_path,
+        phase1_output["report"]
+    )
+    print("DEBUG PHASE1 OUTPUT:", phase1_output)
+    print(
+        f"Phase 1 complete -> {phase1_path}"
+    )
 
-    dossier_path = os.path.join(OUTPUT_DIR, "dossier.md")
-    save_file(dossier_path, phase2_output["report"])
+    phase2_output = build_dossier(
+        phase1_output.get("context", [])
+    )
 
-    print(f"✅ Phase 2 complete → {dossier_path}")
+    dossier_path = (
+        OUTPUT_DIR /
+        f"{company_key.lower()}_dossier.md"
+    )
 
-    # =========================
-    # Phase 3: Analyst Brief
-    # =========================
-    print("\n📊 Phase 3: Generating analyst brief...")
-    builder = AnalystBriefBuilder()
+    save_file(
+        dossier_path,
+        phase2_output["report"]
+    )
 
-    phase3_output = builder.build(
+    print(
+        f"Phase 2 complete -> {dossier_path}"
+    )
+
+    brief_builder = AnalystBriefBuilder()
+
+    phase3_output = brief_builder.build(
         phase1_output,
         phase2_output
     )
 
-    brief_path = os.path.join(OUTPUT_DIR, "analyst_brief.md")
-    save_file(brief_path, phase3_output["report"])
+    brief_path = (
+        OUTPUT_DIR /
+        f"{company_key.lower()}_analyst_brief.md"
+    )
 
-    print(f"✅ Phase 3 complete → {brief_path}")
+    save_file(
+        brief_path,
+        phase3_output["report"]
+    )
 
-    print("\n🎯 PIPELINE COMPLETE — All outputs generated.\n")
-
-    return {
-        "phase1": phase1_output,
-        "phase2": phase2_output,
-        "phase3": phase3_output
-    }
+    print(
+        f"Phase 3 complete -> {brief_path}"
+    )
 
 
 if __name__ == "__main__":
-    run_pipeline()
+
+    OUTPUT_DIR.mkdir(
+        exist_ok=True
+    )
+
+    run_pipeline(
+        "SABLE_OFFSHORE"
+    )
+
+    run_pipeline(
+        "AKER_SOLUTIONS"
+    )

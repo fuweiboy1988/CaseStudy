@@ -10,3 +10,22 @@ chroma_db/
 
 # Test / temporary files
 test_*.py
+__pycache__/
+chroma_db/
+outputs/
+chroma_db/
+chroma_db/
+
+# === Python cache ===
+__pycache__/
+*.pyc
+
+# === Chroma DB ===
+chroma_db/
+
+# === Outputs (generated reports) ===
+outputs/
+outputs_ingestion_report.md
+
+# === OS / IDE ===
+.DS_Store
