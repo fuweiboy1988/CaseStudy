@@ -1,0 +1,12 @@
+requests
+beautifulsoup4
+pandas
+tqdm
+lxml
+pypdf
+chroma-hnswlib
+chromadb
+openai
+tiktoken
+python-dotenv
+tenacity
