@@ -1,6 +1,7 @@
 from src.rag.query_engine import QueryEngine
 from src.rag.adversarial import AdversarialEngine
-from src.rag.risk_severity import score_risks
+from src.rag.economic_risk import compute_economic_risk
+from src.rag.materiality import interpret_materiality
 from src.rag.bull_bear import BullBearEngine
 
 class RAGSystem:
@@ -14,15 +15,18 @@ class RAGSystem:
         context = self.engine.format_context(results)
 
         risk_view = self.adversary.build_risk_view(context)
-        scored = score_risks(risk_view["dominant_risks"])
+
+        economic = compute_economic_risk(risk_view["dominant_risks"])
+        interpretation = interpret_materiality(economic)
+
         bullbear = self.bullbear.build(context)
 
         return {
             "query": query,
-            "risk_profile_scored": scored,
-            "interpretation": risk_view["interpretation"],
-            "investment_thesis": risk_view["investment_thesis"],
+            "economic_risk_profile": economic,
+            "materiality_interpretation": interpretation,
             "bull_case": bullbear["bull_case"],
             "bear_case": bullbear["bear_case"],
-            "evidence_sample": context[:5]
+            "investment_thesis": risk_view["investment_thesis"],
+            "evidence_sample": context[:4]
         }

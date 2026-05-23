@@ -1,22 +1,18 @@
 from src.rag.answer import RAGSystem
-import json
+from src.reports.analyst_brief import AnalystBrief
 
-def main():
-    rag = RAGSystem()
+def run():
+    system = RAGSystem()
+    brief = AnalystBrief()
 
-    print("\n=== Investment Research Engine (Structured RAG) ===\n")
+    query = input("\nQuery: ")
 
-    while True:
-        q = input("\nQuery: ")
+    result = system.answer(query)
+    report = brief.generate(result)
 
-        if q.lower() == "exit":
-            break
-
-        result = rag.answer(q)
-
-        print("\n" + "="*80)
-        print(json.dumps(result, indent=2))
-        print("="*80)
+    print("\n" + "="*80)
+    print(report)
+    print("="*80)
 
 if __name__ == "__main__":
-    main()
+    run()
